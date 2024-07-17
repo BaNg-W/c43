@@ -1,4 +1,4 @@
-package com.example.cscc43.User;
+package com.example.cscc43.appUser;
 
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;

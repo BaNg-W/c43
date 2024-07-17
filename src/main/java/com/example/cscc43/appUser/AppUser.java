@@ -1,4 +1,4 @@
-package com.example.cscc43.User;
+package com.example.cscc43.appUser;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -14,7 +14,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.SequenceGenerator;
-import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -26,7 +25,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @Entity
 
-public class User implements UserDetails{
+public class AppUser implements UserDetails{
 
      @SequenceGenerator(
             name = "student_sequence",
@@ -46,7 +45,7 @@ public class User implements UserDetails{
     @Enumerated(EnumType.STRING)
     private UserRole userRole;
 
-    public User(String username,
+    public AppUser(String username,
                 String email,
                 String password_hash,
                 UserRole userRole) {
