@@ -1,4 +1,4 @@
-package com.example.cscc43;
+package cscc43;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
