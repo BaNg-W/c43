@@ -1,21 +1,75 @@
 package com.example.cscc43.User;
 
+import java.util.Collection;
+import java.util.Collections;
 
-public class User{
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
-    private int user_id;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.SequenceGenerator;
+import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Getter
+@Setter
+@EqualsAndHashCode
+@NoArgsConstructor
+@Entity
+
+public class User implements UserDetails{
+
+     @SequenceGenerator(
+            name = "student_sequence",
+            sequenceName = "student_sequence",
+            allocationSize = 1
+    )
+    @Id
+    @GeneratedValue(
+            strategy = GenerationType.SEQUENCE,
+            generator = "student_sequence"
+    )
+
+    private long user_id;
     private String username;
-    private String email;
     private String password_hash;
+    private String email;
+    @Enumerated(EnumType.STRING)
+    private UserRole userRole;
 
-    public String getPassword() {
-        // TODO Auto-generated method stub
-        return null;
+    public User(String username,
+                String email,
+                String password_hash,
+                UserRole userRole) {
+        this.username = username;
+        this.email = email;
+        this.password_hash = password_hash;
+        this.userRole = userRole;
     }
 
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        SimpleGrantedAuthority authority = new SimpleGrantedAuthority(userRole.name());
+        return Collections.singletonList(authority);
+    }
+
+    @Override
+    public String getPassword() {
+        return password_hash;
+    }
+
+    @Override
     public String getUsername() {
-        // TODO Auto-generated method stub
-        return null;
+        return username;
     }
 
 }
