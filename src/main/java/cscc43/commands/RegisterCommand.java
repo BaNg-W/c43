@@ -18,13 +18,14 @@ public class RegisterCommand {
     }
 
     @ShellMethod(key = "register", value = "Register an account for a new user.")
-    public String register(@ShellOption String username, @ShellOption String password_hash, @ShellOption String email) {
-        AppUser appUser = new AppUser(username, password_hash, email);
+    public String register(@ShellOption String username, @ShellOption String email, @ShellOption String password) {
+        
+        AppUser appUser = new AppUser(username, email, password);
         if (appUserRepo.findByUsername(username) != null) {
             return "Error: Username already exists. Please choose a different username.";
         } else {
             appUserRepo.save(appUser);
-            return "User registered successfully";
+            return "User registered successfully.";
         }   
     }
 }

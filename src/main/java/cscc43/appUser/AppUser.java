@@ -10,10 +10,12 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.ToString;
 
 @Getter
 @Setter
 @EqualsAndHashCode
+@ToString
 @NoArgsConstructor
 
 @Entity
@@ -27,12 +29,12 @@ public class AppUser {
     @Column(unique = true)
     private String username;
     
-    private String password_hash;
+    private String password;
     private String email;
 
-    public AppUser(String username, String email, String password_hash) {
+    public AppUser(String username, String email, String password) {
         this.username = username;
         this.email = email;
-        this.password_hash = password_hash;
+        this.password = password;
     }
 }
