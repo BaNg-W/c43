@@ -7,6 +7,7 @@ import org.springframework.shell.standard.ShellOption;
 
 import cscc43.appUser.AppUser;
 import cscc43.appUser.AppUserRepo;
+import cscc43.appUser.CurrentUser;
 import cscc43.friend.FriendList;
 import cscc43.friend.FriendListRepo;
 import cscc43.friend.FriendRequest;
@@ -17,15 +18,13 @@ import java.util.Scanner;
 
 @ShellComponent
 public class FriendCommand {
-
+    private AppUserRepo appUserRepo;
+    private CurrentUser currentUser;
     @Autowired
     private FriendRequestRepo friendRequestRepo;
     @Autowired
     private FriendListRepo friendListRepo;
-    @Autowired
-    private AppUserRepo appUserRepo;
-    @Autowired
-    private CurrentUser currentUser;
+    
 
     private Scanner scanner = new Scanner(System.in);
 
