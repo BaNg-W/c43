@@ -14,4 +14,8 @@ public interface FriendRequestRepo extends CrudRepository<FriendRequest, Integer
 
     @Query(value = "SELECT * FROM friend_request WHERE request_id = ?1", nativeQuery = true)
     FriendRequest findRequestById(Integer requestId);
+
+    
+    FriendRequest findPendingRequestBySenderIdAndReceiverIdAndStatus(Integer senderId, Integer receiverId, String status);
 }
+

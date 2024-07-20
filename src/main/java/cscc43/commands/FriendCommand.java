@@ -190,12 +190,13 @@ public class FriendCommand {
     @ShellMethod(key = "acceptFriend", value = "Accept a friend request by username")
     public String acceptFriend(@ShellOption String username) {
         Integer receiverId = currentUser.getCurrentUser().getUser_id();
-
+        AppUser sender = appUserRepo.findByUsername(username);
+        FriendRequest friendRequest = friendRequestRepo.findPendingRequest(sender.getUser_id(), receiverId);
         friendRequest.setStatus("accepted");
         friendRequestRepo.save(friendRequest);
 
-        friendListRepo.save(new FriendList(receiverId, sender.getUserId()));
-        friendListRepo.save(new FriendList(sender.getUserId(), receiverId));
+        friendListRepo.save(new FriendList(receiverId, sender.getUser_id()));
+        friendListRepo.save(new FriendList(sender.getUser_id(), receiverId));
 
         return "Friend request from " + username + " accepted.";
     }
@@ -203,8 +204,8 @@ public class FriendCommand {
     @ShellMethod(key = "rejectFriend", value = "Reject a friend request by username")
     public String rejectFriend(@ShellOption String username) {
         Integer receiverId = currentUser.getCurrentUser().getUser_id();
-
-        FriendRequest friendRequest = friendRequestRepo.findPendingRequest(sender.getUserId(), receiverId);
+        AppUser sender = appUserRepo.findByUsername(username);
+        FriendRequest friendRequest = friendRequestRepo.findPendingRequest(sender.getUser_id(), receiverId);
 
         friendRequest.setStatus("rejected");
         friendRequestRepo.save(friendRequest);
