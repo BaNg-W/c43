@@ -1,6 +1,7 @@
 package cscc43.commands;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.shell.Availability;
 import org.springframework.shell.standard.ShellComponent;
 import org.springframework.shell.standard.ShellMethod;
 import org.springframework.shell.standard.ShellOption;
@@ -193,5 +194,9 @@ public class FriendCommand {
             friendList.append(friend.getFriendId()).append("\n");
         }
         return friendList.toString();
+    }
+
+    public Availability isFriendCommandAvailable() {
+        return currentUser.getCurrentUser() != null ? Availability.available() : Availability.unavailable("You must be logged in to manage friends.");
     }
 }
