@@ -61,11 +61,6 @@ public class FriendCommand {
 
     private void manageFriendRequests() {
         Integer receiverId = currentUser.getCurrentUser().getUser_id();
-        if (receiverId == null) {
-            System.out.println("Error: You must be logged in to manage friend requests.");
-            return;
-        }
-
         List<FriendRequest> pendingRequests = friendRequestRepo.findPendingRequestsByReceiverId(receiverId);
         if (pendingRequests.isEmpty()) {
             System.out.println("No pending friend requests.");
@@ -187,31 +182,6 @@ public class FriendCommand {
         return "Friend request sent to user ID " + userId;
     }
 
-    @ShellMethod(key = "acceptFriend", value = "Accept a friend request by username")
-    public String acceptFriend(@ShellOption String username) {
-        Integer receiverId = currentUser.getCurrentUser().getUser_id();
-        AppUser sender = appUserRepo.findByUsername(username);
-        FriendRequest friendRequest = friendRequestRepo.findPendingRequest(sender.getUser_id(), receiverId);
-        friendRequest.setStatus("accepted");
-        friendRequestRepo.save(friendRequest);
-
-        friendListRepo.save(new FriendList(receiverId, sender.getUser_id()));
-        friendListRepo.save(new FriendList(sender.getUser_id(), receiverId));
-
-        return "Friend request from " + username + " accepted.";
-    }
-
-    @ShellMethod(key = "rejectFriend", value = "Reject a friend request by username")
-    public String rejectFriend(@ShellOption String username) {
-        Integer receiverId = currentUser.getCurrentUser().getUser_id();
-        AppUser sender = appUserRepo.findByUsername(username);
-        FriendRequest friendRequest = friendRequestRepo.findPendingRequest(sender.getUser_id(), receiverId);
-
-        friendRequest.setStatus("rejected");
-        friendRequestRepo.save(friendRequest);
-
-        return "Friend request from " + username + " rejected.";
-    }
 
     @ShellMethod(key = "viewFriends", value = "View your friends.")
     public String viewFriends() {
