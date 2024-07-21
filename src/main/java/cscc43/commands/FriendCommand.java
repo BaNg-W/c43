@@ -189,11 +189,17 @@ public class FriendCommand {
         Integer userId = currentUser.getCurrentUser().getUser_id();
 
         Iterable<FriendList> friends = friendListRepo.findByUserId(userId);
-        StringBuilder friendList = new StringBuilder("Friend IDs: \n");
+        StringBuilder friendList = new StringBuilder("Your Friends:\n");
         for (FriendList friend : friends) {
-            friendList.append(friend.getFriendId()).append("\n");
+            AppUser friendUser = appUserRepo.findById(friend.getFriendId()).orElse(null);
+            friendList.append(friendUser != null ? friendUser.getUsername() : "Unknown user").append("\n");
         }
         return friendList.toString();
+    }
+
+    @ShellMethod(key = "removeFriend", value = "Remove a friend by user ID")
+    public String removeFriend(@ShellOption int friendId) {
+        return deleteFriend(friendId);
     }
 
     public Availability isFriendCommandAvailable() {
