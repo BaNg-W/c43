@@ -198,8 +198,24 @@ public class FriendCommand {
     }
 
     @ShellMethod(key = "removeFriend", value = "Remove a friend by user ID")
-    public String removeFriend(@ShellOption int friendId) {
-        return deleteFriend(friendId);
+public String removeFriend(@ShellOption Integer friendId) {
+    Integer userId = currentUser.getCurrentUser().getUser_id();
+
+    // Check if the friend exists in the user's friend list
+    FriendList friend = friendListRepo.findByUserId(userId).stream()
+        .filter(f -> f.getFriendId().equals(friendId))
+        .findFirst()
+        .orElse(null);
+
+    if (friend == null) {
+        return "Error: Friend with user ID " + friendId + " not found in your friend list.";
+    }
+
+    // Delete the friend relationship for both directions
+    friendListRepo.deleteByUserIdAndFriendId(userId, friendId);
+    friendListRepo.deleteByUserIdAndFriendId(friendId, userId);
+
+    return "Friend with user ID " + friendId + " has been removed.";
     }
 
     public Availability isFriendCommandAvailable() {
