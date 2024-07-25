@@ -14,7 +14,6 @@ public class LoginCommand {
     private final AppUserRepo appUserRepo;
     private final CurrentUser currentUser;
 
-    @Autowired
     public LoginCommand(AppUserRepo appUserRepo, CurrentUser currentUser) {
         this.appUserRepo = appUserRepo;
         this.currentUser = currentUser;

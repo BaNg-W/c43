@@ -21,41 +21,56 @@ import java.util.Scanner;
 public class FriendCommand {
     private AppUserRepo appUserRepo;
     private CurrentUser currentUser;
+
+    public FriendCommand(AppUserRepo appUserRepo, CurrentUser currentUser) {
+        this.appUserRepo = appUserRepo;
+        this.currentUser = currentUser;
+    }
+
     @Autowired
     private FriendRequestRepo friendRequestRepo;
     @Autowired
     private FriendListRepo friendListRepo;
-    
 
     private Scanner scanner = new Scanner(System.in);
 
     @ShellMethod(key = "friend", value = "Enter the friend management phase.")
     public void enterFriendPhase() {
-        while (true) {
-            System.out.println("Friend Management Menu:");
-            System.out.println("1. Manage Friend Requests");
-            System.out.println("2. Send a Friend Request");
-            System.out.println("3. Review Friend List");
-            System.out.println("0. Exit");
-
-            int choice = scanner.nextInt();
-            scanner.nextLine(); // Consume newline
-
-            switch (choice) {
-                case 1:
-                    manageFriendRequests();
-                    break;
-                case 2:
-                    sendFriendRequest();
-                    break;
-                case 3:
-                    reviewFriendList();
-                    break;
-                case 0:
-                    System.out.println("Exiting Friend Management.");
-                    return;
-                default:
-                    System.out.println("Invalid choice. Please try again.");
+        if (currentUser.getCurrentUser() == null) {
+            System.out.println("Error: You must be logged in to view your friends.");
+            return;
+        } else {
+            Integer userId = currentUser.getCurrentUser().getUser_id();
+            while (true) {
+                System.out.println("Friend Management Menu:");
+                System.out.println("1. Manage Friend Requests");
+                System.out.println("2. Send a Friend Request");
+                System.out.println("3. Remove a Friend. ");
+                System.out.println("4. Review Friend List");
+                System.out.println("0. Exit");
+    
+                int choice = scanner.nextInt();
+                scanner.nextLine(); // Consume newline
+    
+                switch (choice) {
+                    case 1:
+                        manageFriendRequests();
+                        break;
+                    case 2:
+                        sendFriendRequest();
+                        break;
+                    case 3:
+                        removeFriend();
+                        break;
+                    case 4:
+                        reviewFriendList(userId);
+                        break;
+                    case 0:
+                        System.out.println("Exiting Friend Management.");
+                        return;
+                    default:
+                        System.out.println("Invalid choice. Please try again.");
+                }
             }
         }
     }
@@ -128,27 +143,22 @@ public class FriendCommand {
     }
 
     private void sendFriendRequest() {
-        System.out.print("Enter the user ID of the person to send a friend request to: ");
-        int userId = scanner.nextInt();
-        scanner.nextLine(); // Consume newline
+        System.out.print("Enter the username of the person to send a friend request to: \n");
+        String username = scanner.nextLine();
 
-        AppUser receiver = appUserRepo.findById(userId).orElse(null);
+        AppUser receiver = appUserRepo.findByUsername(username);
         if (receiver == null) {
-            System.out.println("Error: User with user ID " + userId + " does not exist.");
-            return;
+            System.out.println("Error: User with username " + username + " does not exist.");
+        } else if (friendRequestRepo.findSpecficRequest(receiver.getUser_id(), currentUser.getCurrentUser().getUser_id()) != null) {
+            System.out.println("You already have a pending friend request with " + username + ".");
+        } else {
+            FriendRequest friendRequest = new FriendRequest(currentUser.getCurrentUser().getUser_id(), receiver.getUser_id(), "waiting");
+            friendRequestRepo.save(friendRequest);
+            System.out.println("Friend request sent to user " + username + ".");
         }
-
-        String result = addFriend(userId);
-        System.out.println(result);
     }
 
-    private void reviewFriendList() {
-        Integer userId = currentUser.getCurrentUser().getUser_id();
-        if (userId == null) {
-            System.out.println("Error: You must be logged in to view your friends.");
-            return;
-        }
-
+    private void reviewFriendList(Integer userId) {
         while (true) {
             Iterable<FriendList> friends = friendListRepo.findByUserId(userId);
             System.out.println("Your Friends:");
@@ -169,53 +179,35 @@ public class FriendCommand {
         }
     }
 
-    @ShellMethod(key = "addFriend", value = "Send a friend request by user ID")
-    public String addFriend(@ShellOption int userId) {
-        Integer senderId = currentUser.getCurrentUser().getUser_id();
 
-        AppUser receiver = appUserRepo.findById(userId).orElse(null);
-        if (receiver == null) {
-            return "Error: User with user ID " + userId + " does not exist.";
+    public void removeFriend() {
+        System.out.print("Enter the username of the person you wish to remove: \n");
+        String friendUsername = scanner.nextLine();
+
+        if (appUserRepo.findByUsername(friendUsername) == null) {
+            System.out.println("Error: Friend with username " + friendUsername + " not found in your friend list.");
+            return;
         }
 
-        FriendRequest friendRequest = new FriendRequest(senderId, userId, "waiting");
-        friendRequestRepo.save(friendRequest);
-        return "Friend request sent to user ID " + userId;
-    }
-
-
-    @ShellMethod(key = "viewFriends", value = "View your friends.")
-    public String viewFriends() {
+        Integer friendId = appUserRepo.findByUsername(friendUsername).getUser_id();
         Integer userId = currentUser.getCurrentUser().getUser_id();
 
-        Iterable<FriendList> friends = friendListRepo.findByUserId(userId);
-        StringBuilder friendList = new StringBuilder("Your Friends:\n");
-        for (FriendList friend : friends) {
-            AppUser friendUser = appUserRepo.findById(friend.getFriendId()).orElse(null);
-            friendList.append(friendUser != null ? friendUser.getUsername() : "Unknown user").append("\n");
+        // Check if the friend exists in the user's friend list
+        FriendList friend = friendListRepo.findByUserId(userId).stream()
+            .filter(f -> f.getFriendId().equals(friendId))
+            .findFirst()
+            .orElse(null);
+
+        if (friend == null) {
+            System.out.println("Error: Friend with username " + friendUsername + " not found in your friend list.");
+            return;
         }
-        return friendList.toString();
-    }
+        
+        // Delete the friend relationship for both directions
+        friendListRepo.deleteByUserIdAndFriendId(userId, friendId);
+        friendListRepo.deleteByUserIdAndFriendId(friendId, userId);
 
-    @ShellMethod(key = "removeFriend", value = "Remove a friend by user ID")
-public String removeFriend(@ShellOption Integer friendId) {
-    Integer userId = currentUser.getCurrentUser().getUser_id();
-
-    // Check if the friend exists in the user's friend list
-    FriendList friend = friendListRepo.findByUserId(userId).stream()
-        .filter(f -> f.getFriendId().equals(friendId))
-        .findFirst()
-        .orElse(null);
-
-    if (friend == null) {
-        return "Error: Friend with user ID " + friendId + " not found in your friend list.";
-    }
-
-    // Delete the friend relationship for both directions
-    friendListRepo.deleteByUserIdAndFriendId(userId, friendId);
-    friendListRepo.deleteByUserIdAndFriendId(friendId, userId);
-
-    return "Friend with user ID " + friendId + " has been removed.";
+        System.out.println("Friend with user ID " + friendId + " has been removed.");
     }
 
     public Availability isFriendCommandAvailable() {
