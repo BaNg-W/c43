@@ -187,6 +187,7 @@ public class FriendCommand {
         if (appUserRepo.findByUsername(friendUsername) == null) {
             System.out.println("Error: Friend with username " + friendUsername + " not found in your friend list.");
             return;
+            
         }
 
         Integer friendId = appUserRepo.findByUsername(friendUsername).getUser_id();
@@ -202,7 +203,7 @@ public class FriendCommand {
             System.out.println("Error: Friend with username " + friendUsername + " not found in your friend list.");
             return;
         }
-        
+
         // Delete the friend relationship for both directions
         friendListRepo.deleteByUserIdAndFriendId(userId, friendId);
         friendListRepo.deleteByUserIdAndFriendId(friendId, userId);
