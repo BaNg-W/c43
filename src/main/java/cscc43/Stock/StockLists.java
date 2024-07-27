@@ -23,14 +23,15 @@ public class StockLists {
     @Column(name = "creator_id")
     private Integer creatorId;
 
-    @Column(name = "listname")
-    private String listname;
+    @Column(name = "name") // Updated the column name to 'name'
+    private String name;
 
     @Column(name = "publicity")
     private String publicity;
 
-    public StockLists(Integer creatorId, String publicity) {
+    public StockLists(Integer creatorId, String name, String publicity) {
         this.creatorId = creatorId;
+        this.name = name;
         this.publicity = publicity;
     }
 }
