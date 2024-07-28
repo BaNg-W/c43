@@ -33,7 +33,7 @@ public class FriendCommand {
 
     private Scanner scanner = new Scanner(System.in);
 
-    @ShellMethod(key = "friend", value = "Enter the friend management phase.")
+    @ShellMethod(key = "friend", value = "Enter friend management mode.")
     public void enterFriendPhase() {
         if (currentUser.getCurrentUser() == null) {
             System.out.println("Error: You must be logged in to view your friends.");
@@ -41,7 +41,7 @@ public class FriendCommand {
         } else {
             Integer userId = currentUser.getCurrentUser().getUser_id();
             while (true) {
-                System.out.println("Friend Management Menu:");
+                System.out.println("\nFriend Management Menu:");
                 System.out.println("1. Manage Friend Requests");
                 System.out.println("2. Send a Friend Request");
                 System.out.println("3. Remove a Friend. ");

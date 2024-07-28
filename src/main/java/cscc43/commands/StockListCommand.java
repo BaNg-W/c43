@@ -1,6 +1,5 @@
 package cscc43.commands;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.shell.Availability;
 import org.springframework.shell.standard.ShellComponent;
 import org.springframework.shell.standard.ShellMethod;
@@ -30,7 +29,6 @@ public class StockListCommand {
 
     private final Scanner scanner = new Scanner(System.in);
 
-    @Autowired
     public StockListCommand(StockListsRepo stockListsRepo, StockListItemsRepo stockListItemsRepo, ReviewsRepo reviewsRepo, AppUserRepo appUserRepo, FriendListRepo friendListRepo, CurrentUser currentUser) {
         this.stockListsRepo = stockListsRepo;
         this.stockListItemsRepo = stockListItemsRepo;
@@ -40,7 +38,7 @@ public class StockListCommand {
         this.currentUser = currentUser;
     }
 
-    @ShellMethod(key = "stocklist", value = "Enter the stock list management phase.")
+    @ShellMethod(key = "stocklist", value = "Enter stock list management mode.")
     public void enterStockListPhase() {
         if (currentUser.getCurrentUser() == null) {
             System.out.println("Error: You must be logged in to manage stock lists.");
@@ -48,7 +46,7 @@ public class StockListCommand {
         }
 
         while (true) {
-            System.out.println("Stock List Management Menu:");
+            System.out.println("\nStock List Management Menu:");
             System.out.println("1. View accessible stock lists");
             System.out.println("2. Manage your stock lists");
             System.out.println("0. Exit");
@@ -73,10 +71,12 @@ public class StockListCommand {
 
     private void viewAccessibleStockLists() {
         Integer userId = currentUser.getCurrentUser().getUser_id();
-        List<StockLists> accessibleStockLists = stockListsRepo.findAll();
+        List<StockLists> accessibleStockLists = stockListsRepo.findAllStockLists();
 
         accessibleStockLists.removeIf(stockList -> {
-            if (!"all".equals(stockList.getPublicity())) {
+            if ("private".equals(stockList.getPublicity())) {
+                return !stockList.getCreatorId().equals(userId);
+            } else if ("friendsOnly".equals(stockList.getPublicity())) {
                 boolean isFriend = friendListRepo.findByUserId(userId).stream()
                         .anyMatch(f -> f.getFriendId().equals(stockList.getCreatorId()));
                 return !isFriend && !stockList.getCreatorId().equals(userId);
@@ -110,12 +110,13 @@ public class StockListCommand {
 
     private void viewStockListDetails(StockLists stockList) {
         while (true) {
-            System.out.println("Stock List: " + stockList.getName());
+            System.out.println("\nStock List: " + stockList.getName());
             List<StockListItems> items = stockListItemsRepo.findByStockListId(stockList.getStockListsId());
             for (StockListItems item : items) {
                 System.out.println("Stock: " + item.getSymbol() + ", Shares: " + item.getShares());
             }
-
+            
+            displayReviews(stockList);
             System.out.println("1. Write or edit a review");
             System.out.println("0. Back");
 
@@ -134,18 +135,29 @@ public class StockListCommand {
         }
     }
 
+    private void displayReviews(StockLists stockList) {
+        List<Reviews> reviews = reviewsRepo.findByStockListId(stockList.getStockListsId());
+        System.out.println("\nReviews:");
+        for (Reviews review : reviews) {
+            AppUser reviewer = appUserRepo.findById(review.getUserId()).orElse(null);
+            String reviewerName = reviewer != null ? reviewer.getUsername() : "Unknown user";
+            System.out.println("Review by " + reviewerName + ":" + review.getReviewText());
+            System.out.println();
+        }
+    }
+
     private void writeOrEditReview(StockLists stockList) {
         Integer userId = currentUser.getCurrentUser().getUser_id();
         Reviews existingReview = reviewsRepo.findByStockListIdAndUserId(stockList.getStockListsId(), userId);
         if (existingReview != null) {
-            System.out.println("Your existing review: " + existingReview.getReviewText());
+            System.out.println("\nYour existing review: " + existingReview.getReviewText());
         } else {
             existingReview = new Reviews();
             existingReview.setStockListId(stockList.getStockListsId());
             existingReview.setUserId(userId);
         }
 
-        System.out.print("Enter your review (max 4000 characters): ");
+        System.out.print("\nEnter your review (max 4000 characters): ");
         String reviewText = scanner.nextLine();
         existingReview.setReviewText(reviewText);
         reviewsRepo.save(existingReview);
@@ -153,13 +165,15 @@ public class StockListCommand {
     }
 
     private void manageOwnStockLists() {
-        Integer userId = currentUser.getCurrentUser().getUser_id();
-        List<StockLists> stockLists = stockListsRepo.findByCreatorId(userId);
         while (true) {
-            System.out.println("Your Stock Lists:");
+            Integer userId = currentUser.getCurrentUser().getUser_id();
+            List<StockLists> stockLists = stockListsRepo.findByCreatorId(userId);
+
+            System.out.println("\nYour Stock Lists:");
             for (int i = 0; i < stockLists.size(); i++) {
                 System.out.println((i + 1) + ". " + stockLists.get(i).getName());
             }
+            System.out.println((stockLists.size() + 1) + ". Create new empty stock list");
             System.out.println("0. Back");
 
             int choice = scanner.nextInt();
@@ -167,6 +181,8 @@ public class StockListCommand {
 
             if (choice == 0) {
                 return;
+            } else if (choice == (stockLists.size() + 1)) {
+                createEmptyStockList();
             } else if (choice > 0 && choice <= stockLists.size()) {
                 StockLists selectedStockList = stockLists.get(choice - 1);
                 manageStockList(selectedStockList);
@@ -176,9 +192,26 @@ public class StockListCommand {
         }
     }
 
+    private void createEmptyStockList() {
+        System.out.print("Enter the name of the new stock list: ");
+        String name = scanner.nextLine();
+
+        Integer userId = currentUser.getCurrentUser().getUser_id();
+
+        StockLists newStockList = new StockLists();
+        newStockList.setName(name);
+        newStockList.setPublicity("private"); // Default publicity, adjust if needed
+        newStockList.setCreatorId(userId);
+
+        stockListsRepo.save(newStockList);
+
+        System.out.println("New stock list created successfully.");
+    }
+
+
     private void manageStockList(StockLists stockList) {
         while (true) {
-            System.out.println("Stock List: " + stockList.getName());
+            System.out.println("\nStock List: " + stockList.getName());
             List<StockListItems> items = stockListItemsRepo.findByStockListId(stockList.getStockListsId());
             for (StockListItems item : items) {
                 System.out.println("Stock: " + item.getSymbol() + ", Shares: " + item.getShares());
@@ -211,7 +244,7 @@ public class StockListCommand {
     }
 
     private void changePublicity(StockLists stockList) {
-        System.out.print("Enter new publicity (all/friendsonly): ");
+        System.out.print("Enter new publicity (all/friendsOnly/private): ");
         String publicity = scanner.nextLine();
         stockList.setPublicity(publicity);
         stockListsRepo.save(stockList);

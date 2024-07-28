@@ -13,5 +13,5 @@ public interface StockListsRepo extends CrudRepository<StockLists, Integer> {
     List<StockLists> findByCreatorId(Integer creatorId);
     
     @Query(value = "SELECT * FROM stock_lists", nativeQuery = true)
-    List<StockLists> findAll();
+    List<StockLists> findAllStockLists();
 }
