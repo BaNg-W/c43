@@ -1,4 +1,7 @@
 package cscc43.Stock;
+
+import java.sql.Date;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -24,7 +27,7 @@ public class Stock {
 
     @Id
     @Column(nullable = false)
-    private String timestamp;
+    private Date timestamp;
 
     @Id
     @Column(nullable = false)
@@ -40,7 +43,7 @@ public class Stock {
 
     private Long volume;
 
-    public Stock(String timestamp, Double open, Double low, Double high, Double close, Long volume, String symbol) {
+    public Stock(Date timestamp, Double open, Double low, Double high, Double close, Long volume, String symbol) {
         this.timestamp = timestamp;
         this.symbol = symbol;
         this.low = low;

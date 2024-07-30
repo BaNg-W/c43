@@ -198,10 +198,7 @@ public class StockListCommand {
 
         Integer userId = currentUser.getCurrentUser().getUser_id();
 
-        StockLists newStockList = new StockLists();
-        newStockList.setName(name);
-        newStockList.setPublicity("private"); // Default publicity, adjust if needed
-        newStockList.setCreatorId(userId);
+        StockLists newStockList = new StockLists(userId, name, "private");
 
         stockListsRepo.save(newStockList);
 

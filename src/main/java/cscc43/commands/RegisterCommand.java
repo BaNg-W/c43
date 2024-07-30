@@ -1,6 +1,5 @@
 package cscc43.commands;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.shell.standard.ShellComponent;
 import org.springframework.shell.standard.ShellMethod;
 import org.springframework.shell.standard.ShellOption;
@@ -12,7 +11,6 @@ import cscc43.appUser.AppUserRepo;
 public class RegisterCommand {
     private final AppUserRepo appUserRepo;
 
-    @Autowired
     public RegisterCommand(AppUserRepo appUserRepo) {
         this.appUserRepo = appUserRepo;
     }

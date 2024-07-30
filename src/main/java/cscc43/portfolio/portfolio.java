@@ -15,7 +15,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @Entity
 @Table(name = "portfolio")
-public class portfolio {
+public class Portfolio {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Integer portfolioId;
@@ -23,7 +23,11 @@ public class portfolio {
     @Column(name = "cash_balance")
     private Double cashBalance;
 
-    public portfolio(Double cashBalance) {
+    @Column(name = "user_id")
+    private Integer userId;
+
+    public Portfolio(Double cashBalance, Integer userId) {
         this.cashBalance = cashBalance;
+        this.userId = userId;
     }
 }
