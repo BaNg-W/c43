@@ -161,68 +161,180 @@ public class PortfolioCommand {
         }
     }
 
-    private void managePortfolio(Portfolio portfolio) {
-    while (true) {
+    private void calculateAndPrintCovariance() {
+        System.out.print("Enter the first stock symbol: ");
+        String symbol1 = scanner.nextLine();
+        System.out.print("Enter the second stock symbol: ");
+        String symbol2 = scanner.nextLine();
 
-        List<PortfolioStock> stocks = portfolioStockRepo.findStocksByPortfolio(portfolio.getPortfolioId());
+        double covariance = calculateCovariance(symbol1, symbol2);
+        System.out.printf("Covariance between %s and %s: %.2f\n", symbol1, symbol2, covariance);
+    }
 
-        double totalPortfolioValue = portfolio.getCashBalance(); // Start with cash balance
-        System.out.println("Cash Balance: " + portfolio.getCashBalance());
+    public void managePortfolio(Portfolio portfolio) {
+        while (true) {
+            List<PortfolioStock> stocks = portfolioStockRepo.findStocksByPortfolio(portfolio.getPortfolioId());
 
-        if (stocks.isEmpty()) {
-            System.out.println("No stocks in the portfolio.");
-        } else {
-            System.out.println("Stocks in the portfolio:");
-            for (PortfolioStock portfolioStock : stocks) {
-                String symbol = portfolioStock.getSymbol();
-                int shares = portfolioStock.getShares();
+            double totalPortfolioValue = portfolio.getCashBalance(); // Start with cash balance
+            System.out.println("Cash Balance: " + portfolio.getCashBalance());
 
-                // Get the latest stock price for this symbol
-                Stock latestStock = stockRepo.findLastestStock(symbol);
-                if (latestStock != null) {
-                    double pricePerShare = latestStock.getClose();
-                    double stockValue = shares * pricePerShare;
-                    totalPortfolioValue += stockValue; // Add stock value to total portfolio value
+            if (stocks.isEmpty()) {
+                System.out.println("No stocks in the portfolio.");
+            } else {
+                System.out.println("Stocks in the portfolio:");
+                for (PortfolioStock portfolioStock : stocks) {
+                    String symbol = portfolioStock.getSymbol();
+                    int shares = portfolioStock.getShares();
 
-                    // Print stock details
-                    System.out.println("Symbol: " + symbol + ", Shares: " + shares + ", Worth: " + stockValue);
-                } else {
-                    System.out.println("Error: Latest stock price not found for symbol " + symbol);
+                    // Get the latest stock price for this symbol
+                    Stock latestStock = stockRepo.findLastestStock(symbol);
+                    if (latestStock != null) {
+                        double pricePerShare = latestStock.getClose();
+                        double stockValue = shares * pricePerShare;
+                        totalPortfolioValue += stockValue; // Add stock value to total portfolio value
+
+                        // Print stock details
+                        System.out.println("Symbol: " + symbol + ", Shares: " + shares + ", Worth: " + stockValue);
+
+                        // Calculate and display coefficient of variation and Beta
+                        double coefficientOfVariation = calculateCoefficientOfVariation(symbol);
+                        System.out.println("Coefficient of Variation: " + coefficientOfVariation);
+
+                        // Removed Beta calculation from here as it's handled separately
+                    } else {
+                        System.out.println("Error: Latest stock price not found for symbol " + symbol);
+                    }
                 }
+
+                // Print total portfolio value
+                System.out.println("Total portfolio worth: " + totalPortfolioValue);
+
+                displayCorrelationMatrix(stocks);
             }
 
-            // Print total portfolio value
-            System.out.println("Total portfolio worth: " + totalPortfolioValue);
-        }
+            System.out.println("\nPortfolio Management:");
+            System.out.println("1. Manage Cash Balance");
+            System.out.println("2. Manage Stocks");
+            System.out.println("3. Display A Stock Graph");
+            System.out.println("4. Calculate Covariance Between Two Stocks");
+            System.out.println("5. Calculate Beta of a Stock");
+            System.out.println("0. Back");
 
-        System.out.println("\nPortfolio Management:");
-        System.out.println("1. Manage Cash Balance");
-        System.out.println("2. Manage Stocks");
-        System.out.println("3. Display A Stock Graph");
-        System.out.println("0. Back");
+            int choice = scanner.nextInt();
+            scanner.nextLine(); // Consume newline
 
-        int choice = scanner.nextInt();
-        scanner.nextLine(); // Consume newline
-
-        switch (choice) {
-            case 1:
-                manageCash(portfolio);
-                break;
-            case 2:
-                manageStocks(portfolio);
-                break;
-            case 3:
-                displayStockGraph();
-                break;
-            case 0:
-                return;
-            default:
-                System.out.println("Invalid choice. Please try again.");
+            switch (choice) {
+                case 1:
+                    manageCash(portfolio);
+                    break;
+                case 2:
+                    manageStocks(portfolio);
+                    break;
+                case 3:
+                    displayStockGraph();
+                    break;
+                case 4:
+                    calculateAndPrintCovariance();
+                    break;
+                case 5:
+                    calculateAndPrintBeta();
+                    break;
+                case 0:
+                    return;
+                default:
+                    System.out.println("Invalid choice. Please try again.");
+            }
         }
     }
-}
+
+    private void calculateAndPrintBeta() {
+        System.out.print("Enter the stock symbol: ");
+        String stockSymbol = scanner.nextLine();
+        System.out.print("Enter the market index symbol: ");
+        String marketSymbol = scanner.nextLine();
+
+        double beta = calculateBeta(stockSymbol, marketSymbol);
+        System.out.printf("Beta of %s relative to %s: %.2f\n", stockSymbol, marketSymbol, beta);
+    }
 
 
+    private double calculateCoefficientOfVariation(String symbol) {
+        List<Stock> stockData = stockRepo.findBySymbol(symbol);
+        if (stockData == null || stockData.isEmpty()) {
+            return 0.0;
+        }
+
+        double mean = stockData.stream().mapToDouble(Stock::getClose).average().orElse(0.0);
+        double variance = stockData.stream()
+            .mapToDouble(stock -> Math.pow(stock.getClose() - mean, 2))
+            .average().orElse(0.0);
+
+        double standardDeviation = Math.sqrt(variance);
+        return standardDeviation / mean;
+    }
+
+    private double calculateBeta(String symbol, String marketSymbol) {
+        List<Stock> stockData = stockRepo.findBySymbol(symbol);
+        List<Stock> marketData = stockRepo.findBySymbol(marketSymbol);
+
+        if (stockData == null || stockData.isEmpty() || marketData == null || marketData.isEmpty()) {
+            return 0.0;
+        }
+
+        double covariance = calculateCovariance(symbol, marketSymbol);
+        double marketVariance = calculateVariance(marketSymbol);
+
+        return covariance / marketVariance;
+    }
+    
+    private double calculateCovariance(String symbol1, String symbol2) {
+        List<Stock> data1 = stockRepo.findBySymbol(symbol1);
+        List<Stock> data2 = stockRepo.findBySymbol(symbol2);
+    
+        if (data1 == null || data1.isEmpty() || data2 == null || data2.isEmpty() || data1.size() != data2.size()) {
+            return 0.0;
+        }
+    
+        double mean1 = data1.stream().mapToDouble(Stock::getClose).average().orElse(0.0);
+        double mean2 = data2.stream().mapToDouble(Stock::getClose).average().orElse(0.0);
+    
+        double covariance = 0.0;
+        for (int i = 0; i < data1.size(); i++) {
+            double diff1 = data1.get(i).getClose() - mean1;
+            double diff2 = data2.get(i).getClose() - mean2;
+            covariance += diff1 * diff2;
+        }
+    
+        return covariance / data1.size();
+    }
+    
+    private double calculateVariance(String symbol) {
+        List<Stock> stockData = stockRepo.findBySymbol(symbol);
+        if (stockData == null || stockData.isEmpty()) {
+            return 0.0;
+        }
+    
+        double mean = stockData.stream().mapToDouble(Stock::getClose).average().orElse(0.0);
+        return stockData.stream()
+            .mapToDouble(stock -> Math.pow(stock.getClose() - mean, 2))
+            .average().orElse(0.0);
+    }
+    
+
+    private void displayCorrelationMatrix(List<PortfolioStock> stocks) {
+        System.out.println("\nCorrelation Matrix:");
+        for (PortfolioStock stock1 : stocks) {
+            for (PortfolioStock stock2 : stocks) {
+                double covariance = calculateCovariance(stock1.getSymbol(), stock2.getSymbol());
+                double variance1 = calculateVariance(stock1.getSymbol());
+                double variance2 = calculateVariance(stock2.getSymbol());
+                double correlation = covariance / (Math.sqrt(variance1) * Math.sqrt(variance2));
+                System.out.print(correlation + "\t");
+            }
+            System.out.println();
+        }
+    }
+    
 
 
     private void manageCash(Portfolio portfolio) {
