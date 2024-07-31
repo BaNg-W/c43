@@ -60,11 +60,6 @@
 			<artifactId>spring-shell-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
-		<dependency>
-			<groupId>com.googlecode.lanterna</groupId>
-			<artifactId>lanterna</artifactId>
-			<version>3.1.1</version>
-		</dependency>
 	</dependencies>
 	<dependencyManagement>
 		<dependencies>
@@ -92,22 +87,6 @@
 					</excludes>
 				</configuration>
 			</plugin>
-			<plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>exec-maven-plugin</artifactId>
-                <version>3.0.0</version>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>java</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <executable>javaw</executable>
-                    <mainClass>com.yourpackage.MainClass</mainClass>
-                </configuration>
-            </plugin>
 		</plugins>
 	</build>
 

@@ -1,16 +1,10 @@
 package cscc43.commands;
 
 import java.sql.Date;
-import java.util.List;
-import java.util.Optional;
-import java.util.Scanner;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.shell.standard.ShellComponent;
 import org.springframework.shell.standard.ShellMethod;
-
-import com.googlecode.lanterna.graphics.TextGraphics;
-import com.googlecode.lanterna.terminal.DefaultTerminalFactory;
 
 import cscc43.portfolio.Portfolio;
 import cscc43.portfolio.PortfolioRepo;
@@ -21,14 +15,6 @@ import cscc43.Stock.StockListItems;
 import cscc43.Stock.StockListItemsRepo;
 import cscc43.Stock.StockRepo;
 import cscc43.appUser.CurrentUser;
-
-import com.googlecode.lanterna.TerminalSize;
-import com.googlecode.lanterna.TextColor;
-import com.googlecode.lanterna.graphics.TextGraphics;
-import com.googlecode.lanterna.screen.Screen;
-import com.googlecode.lanterna.terminal.DefaultTerminalFactory;
-import com.googlecode.lanterna.terminal.Terminal;
-import com.googlecode.lanterna.terminal.swing.TerminalEmulatorDeviceConfiguration;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -416,45 +402,39 @@ public class PortfolioCommand {
                 return;
             }
             
-            // Initialize Lanterna terminal
-            DefaultTerminalFactory terminalFactory = new DefaultTerminalFactory();
-            terminalFactory.setTerminalEmulatorTitle("Stock Graph");
-            
-            Terminal terminal = terminalFactory.createTerminal();
-            Screen screen = terminalFactory.createScreen();
-            screen.startScreen();
-            TextGraphics textGraphics = screen.newTextGraphics();
-
-            // Determine the graph dimensions
-            int width = 80;
-            int height = 20;
-            int maxPrice = (int) stockList.stream().mapToDouble(Stock::getClose).max().orElse(1);
-            int minPrice = (int) stockList.stream().mapToDouble(Stock::getClose).min().orElse(0);
-
-            // Draw the axes
-            textGraphics.setForegroundColor(TextColor.ANSI.WHITE);
-            for (int i = 0; i < width; i++) {
-                textGraphics.putString(i, height, "-");
-            }
-            for (int i = 0; i < height; i++) {
-                textGraphics.putString(0, i, "|");
+            // Determine the range of stock prices
+            double minPrice = Double.MAX_VALUE;
+            double maxPrice = Double.MIN_VALUE;
+            for (Stock stock : stockList) {
+                if (stock.getClose() < minPrice) {
+                    minPrice = stock.getClose();
+                }
+                if (stock.getClose() > maxPrice) {
+                    maxPrice = stock.getClose();
+                }
             }
 
-            // Plot the stock prices
-            textGraphics.setForegroundColor(TextColor.ANSI.GREEN);
-            for (int i = 0; i < stockList.size(); i++) {
-                Stock stock = stockList.get(i);
-                int x = i + 1;
-                int y = height - ((int) (stock.getClose() - minPrice) * height / (maxPrice - minPrice));
-                textGraphics.putString(x, y, "*");
+            // Normalize the number of dates to 50 if necessary
+            int maxDates = 50;
+            int step = Math.max(1, stockList.size() / maxDates);
+            List<Stock> normalizedStockList = new ArrayList<>();
+            for (int i = 0; i < stockList.size(); i += step) {
+                normalizedStockList.add(stockList.get(i));
             }
 
-            // Refresh the screen to show the graph
-            screen.refresh();
-
-            // Wait for user input before closing
-            terminal.readInput();
-            screen.stopScreen();
+            // Print the stock prices in a vertical ASCII chart
+            int chartHeight = 20; // Height of the chart
+            for (int i = chartHeight; i >= 0; i--) {
+                double threshold = minPrice + (maxPrice - minPrice) * i / chartHeight;
+                for (Stock stock : normalizedStockList) {
+                    if (stock.getClose() >= threshold) {
+                        System.out.print("* ");
+                    } else {
+                        System.out.print("  ");
+                    }
+                }
+                System.out.println();
+            }
             
         } catch (Exception e) {
             e.printStackTrace();
