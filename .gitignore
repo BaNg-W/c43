@@ -33,4 +33,4 @@ build/
 .vscode/
 
 # Springshell log
-.log
+spring-shell.log
