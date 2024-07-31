@@ -92,6 +92,22 @@
 					</excludes>
 				</configuration>
 			</plugin>
+			<plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.0.0</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <executable>javaw</executable>
+                    <mainClass>com.yourpackage.MainClass</mainClass>
+                </configuration>
+            </plugin>
 		</plugins>
 	</build>
 

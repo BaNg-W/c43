@@ -28,9 +28,16 @@ import com.googlecode.lanterna.graphics.TextGraphics;
 import com.googlecode.lanterna.screen.Screen;
 import com.googlecode.lanterna.terminal.DefaultTerminalFactory;
 import com.googlecode.lanterna.terminal.Terminal;
+import com.googlecode.lanterna.terminal.swing.TerminalEmulatorDeviceConfiguration;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+
+import java.util.*;
+import java.util.stream.Collectors;
+import java.sql.Date;
+import java.text.DecimalFormat;
+import java.util.Map.Entry;
 
 @ShellComponent
 public class PortfolioCommand {
@@ -403,7 +410,7 @@ public class PortfolioCommand {
         try {
             parsedDate = dateFormat.parse(dateString);
             java.sql.Date sqlDate = new java.sql.Date(parsedDate.getTime());
-            List<Stock> stockList = stockRepo.findStock(symbol, sqlDate);
+            List<Stock> stockList = stockRepo.findStockAfterDate(symbol, sqlDate);
             if (stockList.isEmpty()) {
                 System.out.println("No stock data found for symbol " + symbol);
                 return;
@@ -411,6 +418,8 @@ public class PortfolioCommand {
             
             // Initialize Lanterna terminal
             DefaultTerminalFactory terminalFactory = new DefaultTerminalFactory();
+            terminalFactory.setTerminalEmulatorTitle("Stock Graph");
+            
             Terminal terminal = terminalFactory.createTerminal();
             Screen screen = terminalFactory.createScreen();
             screen.startScreen();
@@ -419,8 +428,8 @@ public class PortfolioCommand {
             // Determine the graph dimensions
             int width = 80;
             int height = 20;
-            int maxPrice = stockList.stream().mapToInt(Stock::getClosingPrice).max().orElse(1);
-            int minPrice = stockList.stream().mapToInt(Stock::getClosingPrice).min().orElse(0);
+            int maxPrice = (int) stockList.stream().mapToDouble(Stock::getClose).max().orElse(1);
+            int minPrice = (int) stockList.stream().mapToDouble(Stock::getClose).min().orElse(0);
 
             // Draw the axes
             textGraphics.setForegroundColor(TextColor.ANSI.WHITE);

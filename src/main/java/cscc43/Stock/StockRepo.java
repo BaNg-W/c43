@@ -12,7 +12,10 @@ import org.springframework.stereotype.Repository;
 public interface StockRepo extends CrudRepository<Stock, StockId> {
 
     @Query(value = "SELECT * FROM stocks WHERE symbol = ?1 AND timestamp >= ?2", nativeQuery = true)
-    List<Stock> findStock(String symbol, Date timestamp);
+    List<Stock> findStockAfterDate(String symbol, Date timestamp);
+
+    @Query(value = "SELECT * FROM stocks WHERE symbol = ?1", nativeQuery = true)
+    List<Stock> findStock(String symbol);
 
     @Query(value = "SELECT * FROM stocks WHERE symbol = ?1 ORDER BY timestamp DESC LIMIT 1", nativeQuery = true)
     Stock findLastestStock(String symbol);
