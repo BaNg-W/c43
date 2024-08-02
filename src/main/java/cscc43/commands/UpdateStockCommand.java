@@ -19,12 +19,12 @@ public class UpdateStockCommand {
     private final JdbcTemplate jdbcTemplate;
     private final Scanner scanner;
     private final RestTemplate restTemplate;
-    private final String apiKey = "HC2I4DMMURVHJGIQ"; // Replace with your API key
+    private final String apiKey = "HC2I4DMMURVHJGIQ"; // API key
 
     public UpdateStockCommand(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
-        this.scanner = new Scanner(System.in); // Initialize scanner
-        this.restTemplate = new RestTemplate(); // Initialize RestTemplate
+        this.scanner = new Scanner(System.in);
+        this.restTemplate = new RestTemplate();
     }
 
     @ShellMethod(key = "update", value = "Update or add a new stock entry.")

@@ -17,7 +17,6 @@ import cscc43.appUser.CurrentUser;
 import cscc43.Stock.StockCalculations;
 
 import java.text.SimpleDateFormat;
-
 import java.util.*;
 import java.text.DecimalFormat;
 
@@ -214,6 +213,7 @@ public class PortfolioCommand {
                 for (PortfolioStock portfolioStock : stocks) {
                     String symbol = portfolioStock.getSymbol();
                     int shares = portfolioStock.getShares();
+                    Double close = stockRepo.findLastestStock(symbol).getClose();
 
                     // Get the latest stock price for this symbol
                     Stock latestStock = stockRepo.findLastestStock(symbol);
@@ -222,7 +222,7 @@ public class PortfolioCommand {
                         totalPortfolioValue += stockWorth;
 
                         // Print stock details
-                        System.out.printf("\nSymbol: %s, Shares: %d, Worth: %s%n", symbol, shares, df.format(stockWorth));
+                        System.out.printf("\n%s, Close: %s, Shares: %d, Worth: %s%n", symbol, df.format(close), shares, df.format(stockWorth));
 
                         // Calculate and display coefficient of variation and Beta
                         Object[] coefVarBeta = stockCalculations.calculateCoefficientOfVariationAndBeta(symbol, "SPX", startDate, endDate);
@@ -297,7 +297,8 @@ public class PortfolioCommand {
             System.out.println("1. Manage Cash Balance");
             System.out.println("2. Manage Stocks");
             System.out.println("3. Display A Stock Graph");
-            System.out.println("4. Set Time Interval for Calculations");
+            System.out.println("4. Display A Prediction Graph");
+            System.out.println("5. Set Time Interval for Calculations");
             System.out.println("0. Back");
 
             int choice = scanner.nextInt();
@@ -314,6 +315,9 @@ public class PortfolioCommand {
                     displayStockGraph();
                     break;
                 case 4:
+                    displayPredictionGraph();
+                    break;
+                case 5:
                     interval = setPortfolioTimeInterval();
                     startDate = interval[0];
                     endDate = interval[1];
@@ -496,7 +500,7 @@ public class PortfolioCommand {
         System.out.println("0. Back");
 
         int choice = scanner.nextInt();
-        scanner.nextLine(); // Consume newline
+        scanner.nextLine();
 
         switch (choice) {
             case 1:
@@ -528,14 +532,14 @@ public class PortfolioCommand {
     
         Date latestDate = stockRepo.findLastestStock(symbol).getTimestamp();
         Date sqlDate = new Date(latestDate.getTime() - interval * 24 * 60 * 60 * 1000);
-        
+    
         try {
             List<Stock> stockList = stockRepo.findStockAfterDate(symbol, sqlDate);
             if (stockList.isEmpty()) {
                 System.out.println("No stock data found for symbol " + symbol);
                 return;
             }
-            
+    
             // Determine the range of stock prices
             double minPrice = Double.MAX_VALUE;
             double maxPrice = Double.MIN_VALUE;
@@ -547,7 +551,7 @@ public class PortfolioCommand {
                     maxPrice = stock.getClose();
                 }
             }
-
+    
             // Normalize the number of dates to 50 if necessary
             int maxDates = 50;
             int step = Math.max(1, stockList.size() / maxDates);
@@ -555,13 +559,15 @@ public class PortfolioCommand {
             for (int i = 0; i < stockList.size(); i += step) {
                 normalizedStockList.add(stockList.get(i));
             }
-
+    
             System.out.println("\nStock prices for symbol " + symbol + " over the last " + interval + " days:\n");
-
-            // Print the stock prices in a vertical ASCII chart
-            int chartHeight = 20; // Height of the chart
+    
+            // Print the stock prices in a vertical ASCII chart with price labels
+            int chartHeight = 20;
+            double priceStep = (maxPrice - minPrice) / chartHeight;
             for (int i = chartHeight; i >= 0; i--) {
                 double threshold = minPrice + (maxPrice - minPrice) * i / chartHeight;
+                System.out.printf("%8.2f | ", threshold); // Print price label
                 for (Stock stock : normalizedStockList) {
                     if (stock.getClose() >= threshold) {
                         System.out.print("* ");
@@ -571,12 +577,146 @@ public class PortfolioCommand {
                 }
                 System.out.println();
             }
-            
+    
         } catch (Exception e) {
             e.printStackTrace();
         }
-
+    
         System.out.println("\nPress Enter to go back.");
         scanner.nextLine();
     }
+
+
+    public void displayPredictionGraph() {
+        System.out.println("Enter time interval for the prediction:");
+        System.out.println("1. Week");
+        System.out.println("2. Month");
+        System.out.println("3. Quarter");
+        System.out.println("4. Year");
+        System.out.println("5. Five Years");
+        System.out.println("0. Back");
+    
+        int choice = scanner.nextInt();
+        scanner.nextLine();
+    
+        switch (choice) {
+            case 1:
+                displayPredictionGraphByInterval(7);
+                break;
+            case 2:
+                displayPredictionGraphByInterval(30);
+                break;
+            case 3:
+                displayPredictionGraphByInterval(90);
+                break;
+            case 4:
+                displayPredictionGraphByInterval(365);
+                break;
+            case 5:
+                displayPredictionGraphByInterval(1825);
+                break;
+            case 0:
+                return;
+            default:
+                System.out.println("Invalid choice. Please try again.");
+        }
+    }
+
+
+    private void displayPredictionGraphByInterval(int interval) {
+        System.out.print("\nEnter stock symbol: ");
+        String symbol = scanner.nextLine();
+    
+        try {
+            List<Stock> stockList = stockRepo.findStock(symbol);
+            if (stockList.isEmpty()) {
+                System.out.println("No stock data found for symbol " + symbol);
+                return;
+            }
+    
+            // Extract the closing prices from the stock data
+            int dataSize = Math.min(stockList.size(), interval);
+            double[] closingPrices = new double[dataSize];
+            for (int i = 0; i < dataSize; i++) {
+                closingPrices[i] = stockList.get(stockList.size() - dataSize + i).getClose();
+            }
+    
+            // Prepare data for linear regression
+            int n = closingPrices.length;
+            double[] x = new double[n];
+            double[] y = closingPrices;
+            for (int i = 0; i < n; i++) {
+                x[i] = i + 1; // Time series as independent variable
+            }
+    
+            // Calculate the means of x and y
+            double xMean = 0, yMean = 0;
+            for (int i = 0; i < n; i++) {
+                xMean += x[i];
+                yMean += y[i];
+            }
+            xMean /= n;
+            yMean /= n;
+    
+            // Calculate the slope (m) and intercept (b) for y = mx + b
+            double numerator = 0, denominator = 0;
+            for (int i = 0; i < n; i++) {
+                numerator += (x[i] - xMean) * (y[i] - yMean);
+                denominator += (x[i] - xMean) * (x[i] - xMean);
+            }
+            double slope = numerator / denominator;
+            double intercept = yMean - slope * xMean;
+    
+            // Predict the future price for each day in the given interval
+            double[] futurePrices = new double[interval];
+            for (int i = 1; i <= interval; i++) {
+                futurePrices[i - 1] = slope * (n + i) + intercept;
+            }
+    
+            // Normalize the predicted prices to fit within a fixed height for the ASCII graph
+            double maxPrice = Double.MIN_VALUE;
+            double minPrice = Double.MAX_VALUE;
+            for (double price : futurePrices) {
+                if (price > maxPrice) maxPrice = price;
+                if (price < minPrice) minPrice = price;
+            }
+    
+            int graphHeight = 20; // Fixed height for the ASCII graph
+            int maxDays = 50; // Fixed width for the ASCII graph
+            char[][] graph = new char[graphHeight][maxDays];
+            for (int i = 0; i < graphHeight; i++) {
+                for (int j = 0; j < maxDays; j++) {
+                    graph[i][j] = ' ';
+                }
+            }
+    
+            // Normalize the number of days to 50 if necessary
+            int step = Math.max(1, interval / maxDays);
+            for (int i = 0; i < maxDays; i++) {
+                int index = i * step;
+                if (index >= interval) break;
+                int normalizedHeight = (int) ((futurePrices[index] - minPrice) / (maxPrice - minPrice) * (graphHeight - 1));
+                graph[graphHeight - 1 - normalizedHeight][i] = '*';
+            }
+    
+            // Print the ASCII graph with price labels
+            System.out.println("\nPredicted prices for the next " + interval + " days:\n");
+            double priceStep = (maxPrice - minPrice) / (graphHeight - 1);
+            for (int i = 0; i < graphHeight; i++) {
+                double priceLabel = maxPrice - i * priceStep;
+                System.out.printf("%8.2f | ", priceLabel); // Print price label
+                for (int j = 0; j < maxDays; j++) {
+                    System.out.print(graph[i][j] + " ");
+                }
+                System.out.println();
+            }
+    
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    
+        System.out.println("\nPress Enter to go back.");
+        scanner.nextLine();
+    }
+        
 }
