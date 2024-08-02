@@ -44,12 +44,12 @@ public class FriendCommand {
                 System.out.println("\nFriend Management Menu:");
                 System.out.println("1. Manage Friend Requests");
                 System.out.println("2. Send a Friend Request");
-                System.out.println("3. Remove a Friend. ");
+                System.out.println("3. Remove a Friend");
                 System.out.println("4. Review Friend List");
                 System.out.println("0. Exit");
     
                 int choice = scanner.nextInt();
-                scanner.nextLine(); // Consume newline
+                scanner.nextLine();
     
                 switch (choice) {
                     case 1:
@@ -92,7 +92,7 @@ public class FriendCommand {
             System.out.println("0. Back");
 
             int choice = scanner.nextInt();
-            scanner.nextLine(); // Consume newline
+            scanner.nextLine();
 
             if (choice == 0) {
                 return;
@@ -102,7 +102,7 @@ public class FriendCommand {
                 System.out.println("2. Reject Friend Request");
 
                 int action = scanner.nextInt();
-                scanner.nextLine(); // Consume newline
+                scanner.nextLine();
 
                 switch (action) {
                     case 1:
@@ -111,7 +111,7 @@ public class FriendCommand {
                         break;
                     case 2:
                         System.out.println(rejectFriendRequest(selectedRequest));
-                        pendingRequests.remove(selectedRequest); // Remove from the list after action
+                        pendingRequests.remove(selectedRequest);
                         break;
                     default:
                         System.out.println("Invalid choice. Please try again.");
@@ -168,7 +168,7 @@ public class FriendCommand {
             System.out.println("0. Back");
 
             int choice = scanner.nextInt();
-            scanner.nextLine(); // Consume newline
+            scanner.nextLine();
 
             if (choice == 0) {
                 return;

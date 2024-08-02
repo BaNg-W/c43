@@ -55,7 +55,7 @@ public class PortfolioCommand {
             System.out.println("0. Exit");
 
             int choice = scanner.nextInt();
-            scanner.nextLine(); // Consume newline
+            scanner.nextLine();
 
             switch (choice) {
                 case 1:
@@ -108,7 +108,7 @@ public class PortfolioCommand {
         System.out.println("0. Back");
 
         int choice = scanner.nextInt();
-        scanner.nextLine(); // Consume newline
+        scanner.nextLine();
 
         if (choice == 0) {
             return;
@@ -147,7 +147,7 @@ public class PortfolioCommand {
         System.out.println("0. Back");
 
         int choice = scanner.nextInt();
-        scanner.nextLine(); // Consume newline
+        scanner.nextLine();
 
         if (choice == 0) {
             return;
@@ -166,7 +166,7 @@ public class PortfolioCommand {
         System.out.println("2. No");
 
         int choice = scanner.nextInt();
-        scanner.nextLine(); // Consume newline
+        scanner.nextLine();
 
         Date startDate = null;
         Date endDate = null;
@@ -257,7 +257,6 @@ public class PortfolioCommand {
                 List<String> symbols = new ArrayList<>(symbolsSet);
                 Collections.sort(symbols);
         
-                // Initialize matrix
                 int n = symbols.size();
                 double[][] matrix = new double[n][n];
         
@@ -271,7 +270,7 @@ public class PortfolioCommand {
                     int j = symbols.indexOf(symbol2);
         
                     matrix[i][j] = correlation;
-                    matrix[j][i] = correlation; // Symmetric matrix
+                    matrix[j][i] = correlation;
                 }
         
                 // Print header row
@@ -302,7 +301,7 @@ public class PortfolioCommand {
             System.out.println("0. Back");
 
             int choice = scanner.nextInt();
-            scanner.nextLine(); // Consume newline
+            scanner.nextLine();
 
             switch (choice) {
                 case 1:
@@ -340,7 +339,7 @@ public class PortfolioCommand {
             System.out.println("0. Back");
 
             int choice = scanner.nextInt();
-            scanner.nextLine(); // Consume newline
+            scanner.nextLine();
 
             switch (choice) {
                 case 1:
@@ -360,7 +359,7 @@ public class PortfolioCommand {
     private void withdrawCash(Portfolio portfolio) {
         System.out.print("Enter amount to withdraw: ");
         Double amount = scanner.nextDouble();
-        scanner.nextLine(); // Consume newline
+        scanner.nextLine();
 
         if (amount > portfolio.getCashBalance()) {
             System.out.println("Error: Insufficient balance.");
@@ -374,7 +373,7 @@ public class PortfolioCommand {
     private void depositCash(Portfolio portfolio) {
         System.out.print("Enter amount to deposit: ");
         Double amount = scanner.nextDouble();
-        scanner.nextLine(); // Consume newline
+        scanner.nextLine();
 
         portfolio.setCashBalance(portfolio.getCashBalance() + amount);
         portfolioRepo.save(portfolio);
@@ -389,7 +388,7 @@ public class PortfolioCommand {
             System.out.println("0. Back");
 
             int choice = scanner.nextInt();
-            scanner.nextLine(); // Consume newline
+            scanner.nextLine();
 
             switch (choice) {
                 case 1:
@@ -564,7 +563,6 @@ public class PortfolioCommand {
     
             // Print the stock prices in a vertical ASCII chart with price labels
             int chartHeight = 20;
-            double priceStep = (maxPrice - minPrice) / chartHeight;
             for (int i = chartHeight; i >= 0; i--) {
                 double threshold = minPrice + (maxPrice - minPrice) * i / chartHeight;
                 System.out.printf("%8.2f | ", threshold); // Print price label
@@ -646,7 +644,7 @@ public class PortfolioCommand {
             double[] x = new double[n];
             double[] y = closingPrices;
             for (int i = 0; i < n; i++) {
-                x[i] = i + 1; // Time series as independent variable
+                x[i] = i + 1;
             }
     
             // Calculate the means of x and y
@@ -658,7 +656,6 @@ public class PortfolioCommand {
             xMean /= n;
             yMean /= n;
     
-            // Calculate the slope (m) and intercept (b) for y = mx + b
             double numerator = 0, denominator = 0;
             for (int i = 0; i < n; i++) {
                 numerator += (x[i] - xMean) * (y[i] - yMean);
@@ -681,8 +678,8 @@ public class PortfolioCommand {
                 if (price < minPrice) minPrice = price;
             }
     
-            int graphHeight = 20; // Fixed height for the ASCII graph
-            int maxDays = 50; // Fixed width for the ASCII graph
+            int graphHeight = 20;
+            int maxDays = 50;
             char[][] graph = new char[graphHeight][maxDays];
             for (int i = 0; i < graphHeight; i++) {
                 for (int j = 0; j < maxDays; j++) {
@@ -704,7 +701,7 @@ public class PortfolioCommand {
             double priceStep = (maxPrice - minPrice) / (graphHeight - 1);
             for (int i = 0; i < graphHeight; i++) {
                 double priceLabel = maxPrice - i * priceStep;
-                System.out.printf("%8.2f | ", priceLabel); // Print price label
+                System.out.printf("%8.2f | ", priceLabel);
                 for (int j = 0; j < maxDays; j++) {
                     System.out.print(graph[i][j] + " ");
                 }

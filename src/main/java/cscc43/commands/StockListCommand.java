@@ -67,7 +67,7 @@ public class StockListCommand {
             System.out.println("0. Exit");
 
             int choice = scanner.nextInt();
-            scanner.nextLine(); // Consume newline
+            scanner.nextLine();
 
             switch (choice) {
                 case 1:
@@ -110,7 +110,7 @@ public class StockListCommand {
             System.out.println("0. Back");
 
             int choice = scanner.nextInt();
-            scanner.nextLine(); // Consume newline
+            scanner.nextLine();
 
             if (choice == 0) {
                 return;
@@ -178,7 +178,6 @@ public class StockListCommand {
                 List<String> symbols = new ArrayList<>(symbolsSet);
                 Collections.sort(symbols);
         
-                // Initialize matrix
                 int n = symbols.size();
                 double[][] matrix = new double[n][n];
         
@@ -192,7 +191,7 @@ public class StockListCommand {
                     int j = symbols.indexOf(symbol2);
         
                     matrix[i][j] = correlation;
-                    matrix[j][i] = correlation; // Symmetric matrix
+                    matrix[j][i] = correlation;
                 }
         
                 // Print header row
@@ -219,7 +218,7 @@ public class StockListCommand {
             System.out.println("0. Back");
 
             int choice = scanner.nextInt();
-            scanner.nextLine(); // Consume newline
+            scanner.nextLine();
 
             switch (choice) {
                 case 1:
@@ -244,7 +243,7 @@ public class StockListCommand {
         System.out.println("2. No");
 
         int choice = scanner.nextInt();
-        scanner.nextLine(); // Consume newline
+        scanner.nextLine();
 
         Date startDate = null;
         Date endDate = null;
@@ -314,7 +313,7 @@ public class StockListCommand {
             System.out.println("0. Back");
 
             int choice = scanner.nextInt();
-            scanner.nextLine(); // Consume newline
+            scanner.nextLine();
 
             if (choice == 0) {
                 return;
@@ -357,7 +356,7 @@ public class StockListCommand {
             System.out.println("0. Back");
 
             int choice = scanner.nextInt();
-            scanner.nextLine(); // Consume newline
+            scanner.nextLine();
 
             switch (choice) {
                 case 1:
@@ -398,7 +397,7 @@ public class StockListCommand {
             System.out.println("0. Back");
 
             int choice = scanner.nextInt();
-            scanner.nextLine(); // Consume newline
+            scanner.nextLine();
 
             switch (choice) {
                 case 1:
@@ -420,7 +419,7 @@ public class StockListCommand {
         String symbol = scanner.nextLine();
         System.out.print("Enter shares: ");
         int shares = scanner.nextInt();
-        scanner.nextLine(); // Consume newline
+        scanner.nextLine();
 
         StockListItems stockListItem = new StockListItems(stockList.getStockListsId(), symbol, shares);
         stockListItemsRepo.save(stockListItem);

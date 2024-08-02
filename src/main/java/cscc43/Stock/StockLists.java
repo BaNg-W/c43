@@ -23,7 +23,7 @@ public class StockLists {
     @Column(name = "creator_id")
     private Integer creatorId;
 
-    @Column(name = "name") // Updated the column name to 'name'
+    @Column(name = "name")
     private String name;
 
     @Column(name = "publicity")
