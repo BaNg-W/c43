@@ -14,9 +14,19 @@ import cscc43.Stock.StockListItems;
 import cscc43.Stock.StockListItemsRepo;
 import cscc43.Review.Reviews;
 import cscc43.Review.ReviewsRepo;
+import cscc43.Stock.Stock;
+import cscc43.Stock.StockRepo;
+import cscc43.Stock.StockCalculations;
 
+import java.sql.Date;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Scanner;
+import java.util.Set;
+import java.text.DecimalFormat;
 
 @ShellComponent
 public class StockListCommand {
@@ -26,16 +36,21 @@ public class StockListCommand {
     private final AppUserRepo appUserRepo;
     private final FriendListRepo friendListRepo;
     private final CurrentUser currentUser;
+    private StockRepo stockRepo;
+
+    private StockCalculations stockCalculations;
 
     private final Scanner scanner = new Scanner(System.in);
 
-    public StockListCommand(StockListsRepo stockListsRepo, StockListItemsRepo stockListItemsRepo, ReviewsRepo reviewsRepo, AppUserRepo appUserRepo, FriendListRepo friendListRepo, CurrentUser currentUser) {
+    public StockListCommand(StockListsRepo stockListsRepo, StockListItemsRepo stockListItemsRepo, ReviewsRepo reviewsRepo, AppUserRepo appUserRepo, FriendListRepo friendListRepo, CurrentUser currentUser, StockRepo stockRepo, StockCalculations stockCalculations) {
         this.stockListsRepo = stockListsRepo;
         this.stockListItemsRepo = stockListItemsRepo;
         this.reviewsRepo = reviewsRepo;
         this.appUserRepo = appUserRepo;
         this.friendListRepo = friendListRepo;
         this.currentUser = currentUser;
+        this.stockRepo = stockRepo;
+        this.stockCalculations = stockCalculations;
     }
 
     @ShellMethod(key = "stocklist", value = "Enter stock list management mode.")
@@ -109,15 +124,98 @@ public class StockListCommand {
     }
 
     private void viewStockListDetails(StockLists stockList) {
+        Date[] interval = setStockListTimeInterval();
+         DecimalFormat df = new DecimalFormat("0.00");
+        Date startDate = interval[0];
+        Date endDate = interval[1];
+
         while (true) {
             System.out.println("\nStock List: " + stockList.getName());
             List<StockListItems> items = stockListItemsRepo.findByStockListId(stockList.getStockListsId());
-            for (StockListItems item : items) {
-                System.out.println("Stock: " + item.getSymbol() + ", Shares: " + item.getShares());
+
+            if (items.isEmpty()) {
+                System.out.println("No stocks in this list.");
+            } else {
+                for (StockListItems item : items) {
+                    String symbol = item.getSymbol();
+                    int shares = item.getShares();
+
+                    // Get the latest stock price for this symbol
+                    Stock latestStock = stockRepo.findLastestStock(symbol);
+                    if (latestStock != null) {
+                        double stockWorth = latestStock.getClose() * shares;
+
+                        // Print stock details
+                        System.out.printf("Stock: %s, Shares: %d, Worth: %.2f%n", symbol, shares, stockWorth);
+
+                        // Calculate and display coefficient of variation and Beta
+                        Object[] coefVarBeta = stockCalculations.calculateCoefficientOfVariationAndBeta(symbol, "SPX", startDate, endDate);
+                        if (coefVarBeta != null && coefVarBeta.length == 2) {
+                            double coefVar = (double) coefVarBeta[0];
+                            double beta = (double) coefVarBeta[1];
+                            System.out.printf("  Coefficient of Variation: %s, Beta: %s%n", df.format(coefVar), df.format(beta));
+                        }
+                    } else {
+                        System.out.println("Error: Latest stock price not found for symbol " + symbol);
+                    }
+                }
+
+                // Print correlation matrix
+                List<Object[]> correlationMatrix = stockCalculations.calculateCorrelationMatrixST(stockList.getStockListsId(), startDate, endDate);
+                System.out.println("\nCorrelation Matrix:");
+                
+                if (correlationMatrix == null || correlationMatrix.isEmpty()) {
+                    System.out.println("No correlation matrix available.");
+                    return;
+                }
+        
+                // Extract unique symbols
+                Set<String> symbolsSet = new HashSet<>();
+                for (Object[] row : correlationMatrix) {
+                    symbolsSet.add((String) row[0]);
+                    symbolsSet.add((String) row[1]);
+                }
+                List<String> symbols = new ArrayList<>(symbolsSet);
+                Collections.sort(symbols);
+        
+                // Initialize matrix
+                int n = symbols.size();
+                double[][] matrix = new double[n][n];
+        
+                // Fill matrix with correlation values
+                for (Object[] row : correlationMatrix) {
+                    String symbol1 = (String) row[0];
+                    String symbol2 = (String) row[1];
+                    double correlation = (Double) row[2];
+        
+                    int i = symbols.indexOf(symbol1);
+                    int j = symbols.indexOf(symbol2);
+        
+                    matrix[i][j] = correlation;
+                    matrix[j][i] = correlation; // Symmetric matrix
+                }
+        
+                // Print header row
+                System.out.print("\t");
+                for (String symbol : symbols) {
+                    System.out.print(symbol + "\t");
+                }
+                System.out.println();
+        
+                // Print matrix
+                for (int i = 0; i < n; i++) {
+                    System.out.print(symbols.get(i) + "\t");
+                    for (int j = 0; j < n; j++) {
+                        System.out.printf("%.2f\t", matrix[i][j]);
+                    }
+                    System.out.println();
+                }
+                
             }
-            
+
             displayReviews(stockList);
             System.out.println("1. Write or edit a review");
+            System.out.println("2. Set Time Interval for Calculations");
             System.out.println("0. Back");
 
             int choice = scanner.nextInt();
@@ -127,6 +225,11 @@ public class StockListCommand {
                 case 1:
                     writeOrEditReview(stockList);
                     break;
+                case 2:
+                    interval = setStockListTimeInterval();
+                    startDate = interval[0];
+                    endDate = interval[1];
+                    break;
                 case 0:
                     return;
                 default:
@@ -134,6 +237,40 @@ public class StockListCommand {
             }
         }
     }
+
+    private Date[] setStockListTimeInterval() {
+        System.out.println("Do you want to set a time interval for the calculations? (default is all available data)");
+        System.out.println("1. Yes");
+        System.out.println("2. No");
+
+        int choice = scanner.nextInt();
+        scanner.nextLine(); // Consume newline
+
+        Date startDate = null;
+        Date endDate = null;
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+        try {
+            if (choice == 1) {
+                    System.out.println("Enter start date (yyyy-MM-dd): ");
+                    String startDateStr = scanner.nextLine();
+                    System.out.println("Enter end date (yyyy-MM-dd): ");
+                    String endDateStr = scanner.nextLine();
+
+                    startDate = new Date(dateFormat.parse(startDateStr).getTime());
+                    endDate = new Date(dateFormat.parse(endDateStr).getTime());
+
+            } else {
+                startDate = new Date(dateFormat.parse("2013-02-08").getTime());
+                endDate = new Date(dateFormat.parse("2018-02-07").getTime());
+            }
+        } catch (Exception e) {
+            System.out.println("Invalid date format. Please try again.");
+        }
+
+        return new Date[]{startDate, endDate};
+    }
+
+
 
     private void displayReviews(StockLists stockList) {
         List<Reviews> reviews = reviewsRepo.findByStockListId(stockList.getStockListsId());

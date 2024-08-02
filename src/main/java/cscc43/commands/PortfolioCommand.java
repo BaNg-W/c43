@@ -11,19 +11,15 @@ import cscc43.portfolio.PortfolioRepo;
 import cscc43.portfolio.PortfolioStock;
 import cscc43.portfolio.PortfolioStockRepo;
 import cscc43.Stock.Stock;
-import cscc43.Stock.StockListItems;
 import cscc43.Stock.StockListItemsRepo;
 import cscc43.Stock.StockRepo;
 import cscc43.appUser.CurrentUser;
+import cscc43.Stock.StockCalculations;
 
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 
 import java.util.*;
-import java.util.stream.Collectors;
-import java.sql.Date;
 import java.text.DecimalFormat;
-import java.util.Map.Entry;
 
 @ShellComponent
 public class PortfolioCommand {
@@ -33,6 +29,10 @@ public class PortfolioCommand {
     private PortfolioStockRepo portfolioStockRepo;
 
     private Scanner scanner = new Scanner(System.in);
+
+    @Autowired
+    private StockCalculations stockCalculations;
+
 
     public PortfolioCommand(PortfolioRepo portfolioRepo, StockListItemsRepo stockListItemsRepo, CurrentUser currentUser, StockRepo stockRepo, PortfolioStockRepo portfolioStockRepo) {
         this.portfolioRepo = portfolioRepo;
@@ -161,18 +161,56 @@ public class PortfolioCommand {
         }
     }
 
+    private Date[] setPortfolioTimeInterval() {
+        System.out.println("Do you want to set a time interval for the calculations? (default is all available data)");
+        System.out.println("1. Yes");
+        System.out.println("2. No");
+
+        int choice = scanner.nextInt();
+        scanner.nextLine(); // Consume newline
+
+        Date startDate = null;
+        Date endDate = null;
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+        try {
+            if (choice == 1) {
+                    System.out.println("Enter start date (yyyy-MM-dd): ");
+                    String startDateStr = scanner.nextLine();
+                    System.out.println("Enter end date (yyyy-MM-dd): ");
+                    String endDateStr = scanner.nextLine();
+
+                    startDate = new Date(dateFormat.parse(startDateStr).getTime());
+                    endDate = new Date(dateFormat.parse(endDateStr).getTime());
+
+            } else {
+                startDate = new Date(dateFormat.parse("2013-02-08").getTime());
+                endDate = new Date(dateFormat.parse("2018-02-07").getTime());
+            }
+        } catch (Exception e) {
+            System.out.println("Invalid date format. Please try again.");
+        }
+
+        return new Date[]{startDate, endDate};
+    }
 
     public void managePortfolio(Portfolio portfolio) {
+        Date[] interval = setPortfolioTimeInterval();
+        Date startDate = interval[0];
+        Date endDate = interval[1];
+
+        // DecimalFormat instance to ensure 2 decimal places
+        DecimalFormat df = new DecimalFormat("0.00");
+
         while (true) {
             List<PortfolioStock> stocks = portfolioStockRepo.findStocksByPortfolio(portfolio.getPortfolioId());
 
-            double totalPortfolioValue = portfolio.getCashBalance(); // Start with cash balance
-            System.out.println("Cash Balance: " + portfolio.getCashBalance());
+            double totalPortfolioValue = 0; // Start at zero
+            System.out.println("\nCash Balance: " + df.format(portfolio.getCashBalance()));
 
             if (stocks.isEmpty()) {
                 System.out.println("No stocks in the portfolio.");
             } else {
-                System.out.println("Stocks in the portfolio:");
+                System.out.println("\nStocks in the portfolio:");
                 for (PortfolioStock portfolioStock : stocks) {
                     String symbol = portfolioStock.getSymbol();
                     int shares = portfolioStock.getShares();
@@ -180,29 +218,86 @@ public class PortfolioCommand {
                     // Get the latest stock price for this symbol
                     Stock latestStock = stockRepo.findLastestStock(symbol);
                     if (latestStock != null) {
-                        
+                        double stockWorth = latestStock.getClose() * shares;
+                        totalPortfolioValue += stockWorth;
+
                         // Print stock details
-                        System.out.println("Symbol: " + symbol + ", Shares: " + shares + ", Worth: " + );
+                        System.out.printf("\nSymbol: %s, Shares: %d, Worth: %s%n", symbol, shares, df.format(stockWorth));
 
                         // Calculate and display coefficient of variation and Beta
-                        System.out.println("Coefficient of Variation: " );
-                        System.out.println("Beta: " );
-
+                        Object[] coefVarBeta = stockCalculations.calculateCoefficientOfVariationAndBeta(symbol, "SPX", startDate, endDate);
+                        if (coefVarBeta != null && coefVarBeta.length == 2) {
+                            double coefVar = (double) coefVarBeta[0];
+                            double beta = (double) coefVarBeta[1];
+                            System.out.printf("  Coefficient of Variation: %s, Beta: %s%n", df.format(coefVar), df.format(beta));
+                        }
                     } else {
                         System.out.println("Error: Latest stock price not found for symbol " + symbol);
                     }
                 }
 
                 // Print total portfolio value
-                System.out.println("Total portfolio worth: " + totalPortfolioValue);
-                System.out.println("print correlation matrix " );
+                System.out.printf("\nPortfolio present market value: %s%n", df.format(totalPortfolioValue));
 
+                // Print correlation matrix
+                List<Object[]> correlationMatrix = stockCalculations.calculateCorrelationMatrix(portfolio.getPortfolioId(), startDate, endDate);
+                System.out.println("\nCorrelation Matrix:");
+                
+                if (correlationMatrix == null || correlationMatrix.isEmpty()) {
+                    System.out.println("No correlation matrix available.");
+                    return;
+                }
+        
+                // Extract unique symbols
+                Set<String> symbolsSet = new HashSet<>();
+                for (Object[] row : correlationMatrix) {
+                    symbolsSet.add((String) row[0]);
+                    symbolsSet.add((String) row[1]);
+                }
+                List<String> symbols = new ArrayList<>(symbolsSet);
+                Collections.sort(symbols);
+        
+                // Initialize matrix
+                int n = symbols.size();
+                double[][] matrix = new double[n][n];
+        
+                // Fill matrix with correlation values
+                for (Object[] row : correlationMatrix) {
+                    String symbol1 = (String) row[0];
+                    String symbol2 = (String) row[1];
+                    double correlation = (Double) row[2];
+        
+                    int i = symbols.indexOf(symbol1);
+                    int j = symbols.indexOf(symbol2);
+        
+                    matrix[i][j] = correlation;
+                    matrix[j][i] = correlation; // Symmetric matrix
+                }
+        
+                // Print header row
+                System.out.print("\t");
+                for (String symbol : symbols) {
+                    System.out.print(symbol + "\t");
+                }
+                System.out.println();
+        
+                // Print matrix
+                for (int i = 0; i < n; i++) {
+                    System.out.print(symbols.get(i) + "\t");
+                    for (int j = 0; j < n; j++) {
+                        System.out.printf("%.2f\t", matrix[i][j]);
+                    }
+                    System.out.println();
+                }
+                
+                System.out.printf("\nCalculations based on data from %s to %s%n", startDate, endDate);
             }
 
             System.out.println("\nPortfolio Management:");
             System.out.println("1. Manage Cash Balance");
             System.out.println("2. Manage Stocks");
             System.out.println("3. Display A Stock Graph");
+            System.out.println("4. Set Time Interval for Calculations");
             System.out.println("0. Back");
 
             int choice = scanner.nextInt();
@@ -218,6 +313,11 @@ public class PortfolioCommand {
                 case 3:
                     displayStockGraph();
                     break;
+                case 4:
+                    interval = setPortfolioTimeInterval();
+                    startDate = interval[0];
+                    endDate = interval[1];
+                    break;
                 case 0:
                     return;
                 default:
@@ -225,6 +325,8 @@ public class PortfolioCommand {
             }
         }
     }
+
+
 
     private void manageCash(Portfolio portfolio) {
         while (true) {
@@ -384,19 +486,50 @@ public class PortfolioCommand {
         }
     }
 
-
-
-    // timestamp signifies the date AFTER for which the stock prices are to be displayed
     public void displayStockGraph() {
+        System.out.println("Enter time interval for the graph:");
+        System.out.println("1. Week");
+        System.out.println("2. Month");
+        System.out.println("3. Quarter");
+        System.out.println("4. Year");
+        System.out.println("5. Five Years");
+        System.out.println("0. Back");
+
+        int choice = scanner.nextInt();
+        scanner.nextLine(); // Consume newline
+
+        switch (choice) {
+            case 1:
+                displayStockGraphByInterval(7);
+                break;
+            case 2:
+                displayStockGraphByInterval(30);
+                break;
+            case 3:
+                displayStockGraphByInterval(90);
+                break;
+            case 4:
+                displayStockGraphByInterval(365);
+                break;
+            case 5:
+                displayStockGraphByInterval(1825);
+                break;
+            case 0:
+                return;
+            default:
+                System.out.println("Invalid choice. Please try again.");
+        }
+    }
+
+
+    private void displayStockGraphByInterval(long interval) {
         System.out.print("Enter stock symbol: ");
         String symbol = scanner.nextLine();
     
-        String dateString = "2013-01-01"; //FIX THIS to not be a static date later
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-        java.util.Date parsedDate;
+        Date latestDate = stockRepo.findLastestStock(symbol).getTimestamp();
+        Date sqlDate = new Date(latestDate.getTime() - interval * 24 * 60 * 60 * 1000);
+        
         try {
-            parsedDate = dateFormat.parse(dateString);
-            java.sql.Date sqlDate = new java.sql.Date(parsedDate.getTime());
             List<Stock> stockList = stockRepo.findStockAfterDate(symbol, sqlDate);
             if (stockList.isEmpty()) {
                 System.out.println("No stock data found for symbol " + symbol);
@@ -423,6 +556,8 @@ public class PortfolioCommand {
                 normalizedStockList.add(stockList.get(i));
             }
 
+            System.out.println("\nStock prices for symbol " + symbol + " over the last " + interval + " days:\n");
+
             // Print the stock prices in a vertical ASCII chart
             int chartHeight = 20; // Height of the chart
             for (int i = chartHeight; i >= 0; i--) {
@@ -440,5 +575,8 @@ public class PortfolioCommand {
         } catch (Exception e) {
             e.printStackTrace();
         }
+
+        System.out.println("\nPress Enter to go back.");
+        scanner.nextLine();
     }
 }
