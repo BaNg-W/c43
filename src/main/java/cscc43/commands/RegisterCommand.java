@@ -15,7 +15,7 @@ public class RegisterCommand {
         this.appUserRepo = appUserRepo;
     }
 
-    @ShellMethod(key = "register", value = "Register an account for a new user.")
+    @ShellMethod(key = "register", value = "Register an account for a new user. >register <username> <email> <password>")
     public String register(@ShellOption String username, @ShellOption String email, @ShellOption String password) {
         
         AppUser appUser = new AppUser(username, email, password);

@@ -87,7 +87,7 @@ public class PortfolioCommand {
         } else {
             System.out.println("Your Portfolios:");
             for (int i = 0; i < portfolios.size(); i++) {
-                System.out.println((i + 1) + ". Portfolio ID: " + portfolios.get(i).getPortfolioId() + ", Cash Balance: " + portfolios.get(i).getCashBalance());
+                System.out.println((i + 1) + ". Portfolio ID: " + portfolios.get(i).getPortfolioId() + ", Cash Balance: " + Math.round(portfolios.get(i).getCashBalance() * 100.0) / 100.0);
             }
         }
     }
@@ -103,7 +103,7 @@ public class PortfolioCommand {
 
         System.out.println("\nSelect a Portfolio by number:");
         for (int i = 0; i < portfolios.size(); i++) {
-            System.out.println((i + 1) + ". Portfolio ID: " + portfolios.get(i).getPortfolioId() + ", Cash Balance: " + portfolios.get(i).getCashBalance());
+            System.out.println((i + 1) + ". Portfolio ID: " + portfolios.get(i).getPortfolioId() + ", Cash Balance: " + Math.round(portfolios.get(i).getCashBalance() * 100.0) / 100.0);
         }
         System.out.println("0. Back");
 
@@ -142,7 +142,7 @@ public class PortfolioCommand {
 
         System.out.println("Select a Portfolio to delete by number:");
         for (int i = 0; i < portfolios.size(); i++) {
-            System.out.println((i + 1) + ". Portfolio ID: " + portfolios.get(i).getPortfolioId() + ", Cash Balance: " + portfolios.get(i).getCashBalance());
+            System.out.println((i + 1) + ". Portfolio ID: " + portfolios.get(i).getPortfolioId() + ", Cash Balance: " + Math.round(portfolios.get(i).getCashBalance() * 100.0) / 100.0);
         }
         System.out.println("0. Back");
 
@@ -161,7 +161,7 @@ public class PortfolioCommand {
     }
 
     private Date[] setPortfolioTimeInterval() {
-        System.out.println("Do you want to set a time interval for the calculations? (default is all available data)");
+        System.out.println("\nDo you want to set a time interval for the statistic calculations? (default is all historical data)");
         System.out.println("1. Yes");
         System.out.println("2. No");
 
@@ -232,7 +232,7 @@ public class PortfolioCommand {
                             System.out.printf("  Coefficient of Variation: %s, Beta: %s%n", df.format(coefVar), df.format(beta));
                         }
                     } else {
-                        System.out.println("Error: Latest stock price not found for symbol " + symbol);
+                        System.out.println("\nError: Latest stock price not found for symbol " + symbol);
                     }
                 }
 
@@ -366,7 +366,7 @@ public class PortfolioCommand {
         } else {
             portfolio.setCashBalance(portfolio.getCashBalance() - amount);
             portfolioRepo.save(portfolio);
-            System.out.println("Withdrawal successful. New balance: " + portfolio.getCashBalance());
+            System.out.println("Withdrawal successful. New balance: " + Math.round(portfolio.getCashBalance() * 100.0) / 100.0);
         }
     }
 
@@ -377,12 +377,12 @@ public class PortfolioCommand {
 
         portfolio.setCashBalance(portfolio.getCashBalance() + amount);
         portfolioRepo.save(portfolio);
-        System.out.println("Deposit successful. New balance: " + portfolio.getCashBalance());
+        System.out.println("Deposit successful. New balance: " + Math.round(portfolio.getCashBalance() * 100.0) / 100.0);
     }
 
     private void manageStocks(Portfolio portfolio) {
          while (true) {
-            System.out.println("Manage Stocks:");
+            System.out.println("\nManage Stocks:");
             System.out.println("1. Buy Stock");
             System.out.println("2. Sell Stock");
             System.out.println("0. Back");
@@ -439,7 +439,7 @@ public class PortfolioCommand {
                 portfolioStockRepo.save(newStock);
             }
 
-            System.out.println("Purchase successful. New balance: " + portfolio.getCashBalance());
+            System.out.println("Purchase successful. New balance: " + Math.round(portfolio.getCashBalance() * 100.0) / 100.0);
         } catch (NumberFormatException e) {
             System.out.println("Invalid input. Please enter valid numbers.");
         }
@@ -483,7 +483,7 @@ public class PortfolioCommand {
             portfolio.setCashBalance(portfolio.getCashBalance() + totalRevenue);
             portfolioRepo.save(portfolio);
 
-            System.out.println("Sale successful. New balance: " + portfolio.getCashBalance());
+            System.out.println("Sale successful. New balance: " + Math.round(portfolio.getCashBalance() * 100.0) / 100.0);
         } catch (NumberFormatException e) {
             System.out.println("Invalid input. Please enter valid numbers.");
         }

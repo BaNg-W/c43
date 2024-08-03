@@ -27,7 +27,7 @@ public class UpdateStockCommand {
         this.restTemplate = new RestTemplate();
     }
 
-    @ShellMethod(key = "update", value = "Update or add a new stock entry.")
+    @ShellMethod(key = "update", value = "Update or add a new stock entry.  >update <symbol> <date>")
     public String updateStock(@ShellOption String symbol, @ShellOption String date) {
 
         // Fetch data from Alpha Vantage
@@ -50,7 +50,7 @@ public class UpdateStockCommand {
             return "Invalid input. Please check the format of your inputs.";
         }
 
-        System.out.println("You are about to update/add the following stock entry:");
+        System.out.println("\nYou are about to update/add the following stock entry:");
         System.out.println("Timestamp: " + timestamp);
         System.out.println("Symbol: " + symbol);
         System.out.println("Open: " + open);
@@ -63,7 +63,7 @@ public class UpdateStockCommand {
         String confirmation = scanner.nextLine();
 
         if (confirmation.equalsIgnoreCase("0")) {
-            return "Stock entry update cancelled.";
+            return "\nStock entry update cancelled.";
         } else if (confirmation.equalsIgnoreCase("yes")) {
             // SQL query to insert or update stock entry
             String sql = """

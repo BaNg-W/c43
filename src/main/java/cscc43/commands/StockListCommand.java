@@ -100,7 +100,7 @@ public class StockListCommand {
         });
 
         while (true) {
-            System.out.println("Accessible Stock Lists:");
+            System.out.println("\nAccessible Stock Lists:");
             for (int i = 0; i < accessibleStockLists.size(); i++) {
                 StockLists stockList = accessibleStockLists.get(i);
                 AppUser creator = appUserRepo.findById(stockList.getCreatorId()).orElse(null);
@@ -146,7 +146,7 @@ public class StockListCommand {
                         double stockWorth = latestStock.getClose() * shares;
 
                         // Print stock details
-                        System.out.printf("Stock: %s, Shares: %d, Worth: %.2f%n", symbol, shares, stockWorth);
+                        System.out.printf("\nStock: %s, Shares: %d, Worth: %.2f%n", symbol, shares, stockWorth);
 
                         // Calculate and display coefficient of variation and Beta
                         Object[] coefVarBeta = stockCalculations.calculateCoefficientOfVariationAndBeta(symbol, "SPX", startDate, endDate);
@@ -156,7 +156,7 @@ public class StockListCommand {
                             System.out.printf("  Coefficient of Variation: %s, Beta: %s%n", df.format(coefVar), df.format(beta));
                         }
                     } else {
-                        System.out.println("Error: Latest stock price not found for symbol " + symbol);
+                        System.out.println("\nError: Latest stock price not found for symbol " + symbol);
                     }
                 }
 
@@ -238,7 +238,7 @@ public class StockListCommand {
     }
 
     private Date[] setStockListTimeInterval() {
-        System.out.println("Do you want to set a time interval for the calculations? (default is all available data)");
+        System.out.println("\nDo you want to set a time interval for the statistic calculations? (default is all historical data)");
         System.out.println("1. Yes");
         System.out.println("2. No");
 
@@ -377,7 +377,7 @@ public class StockListCommand {
     }
 
     private void changePublicity(StockLists stockList) {
-        System.out.print("Enter new publicity (all/friendsOnly/private): ");
+        System.out.print("\nEnter new publicity (all/friendsOnly/private): ");
         String publicity = scanner.nextLine();
         stockList.setPublicity(publicity);
         stockListsRepo.save(stockList);
@@ -391,7 +391,7 @@ public class StockListCommand {
 
     private void manageStocks(StockLists stockList) {
         while (true) {
-            System.out.println("Manage Stocks in " + stockList.getName());
+            System.out.println("\nManage Stocks in " + stockList.getName());
             System.out.println("1. Add Stock");
             System.out.println("2. Remove Stock");
             System.out.println("0. Back");
@@ -420,6 +420,11 @@ public class StockListCommand {
         System.out.print("Enter shares: ");
         int shares = scanner.nextInt();
         scanner.nextLine();
+
+        if (stockRepo.findLastestStock(symbol) == null) {
+            System.out.println("Error: Stock not found.");
+            return;
+        }
 
         StockListItems stockListItem = new StockListItems(stockList.getStockListsId(), symbol, shares);
         stockListItemsRepo.save(stockListItem);

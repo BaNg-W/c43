@@ -78,12 +78,12 @@ public class FriendCommand {
         Integer receiverId = currentUser.getCurrentUser().getUser_id();
         List<FriendRequest> pendingRequests = friendRequestRepo.findPendingRequestsByReceiverId(receiverId);
         if (pendingRequests.isEmpty()) {
-            System.out.println("No pending friend requests.");
+            System.out.println("\nNo pending friend requests.");
             return;
         }
 
         while (true) {
-            System.out.println("Pending Friend Requests:");
+            System.out.println("\nPending Friend Requests:");
             for (int i = 0; i < pendingRequests.size(); i++) {
                 FriendRequest request = pendingRequests.get(i);
                 AppUser sender = appUserRepo.findById(request.getSenderId()).orElse(null);
@@ -98,7 +98,7 @@ public class FriendCommand {
                 return;
             } else if (choice > 0 && choice <= pendingRequests.size()) {
                 FriendRequest selectedRequest = pendingRequests.get(choice - 1);
-                System.out.println("1. Accept Friend Request");
+                System.out.println("\n1. Accept Friend Request");
                 System.out.println("2. Reject Friend Request");
 
                 int action = scanner.nextInt();
@@ -142,25 +142,25 @@ public class FriendCommand {
     }
 
     private void sendFriendRequest() {
-        System.out.print("Enter the username of the person to send a friend request to: \n");
+        System.out.print("\nEnter the username of the person to send a friend request to: \n");
         String username = scanner.nextLine();
 
         AppUser receiver = appUserRepo.findByUsername(username);
         if (receiver == null) {
-            System.out.println("Error: User with username " + username + " does not exist.");
+            System.out.println("\nError: User with username " + username + " does not exist.");
         } else if (friendRequestRepo.findSpecficRequest(receiver.getUser_id(), currentUser.getCurrentUser().getUser_id()) != null) {
-            System.out.println("You already have a pending friend request with " + username + ".");
+            System.out.println("\nYou already have a pending friend request with " + username + ".");
         } else {
             FriendRequest friendRequest = new FriendRequest(currentUser.getCurrentUser().getUser_id(), receiver.getUser_id(), "waiting");
             friendRequestRepo.save(friendRequest);
-            System.out.println("Friend request sent to user " + username + ".");
+            System.out.println("\nFriend request sent to user " + username + ".");
         }
     }
 
     private void reviewFriendList(Integer userId) {
         while (true) {
             Iterable<FriendList> friends = friendListRepo.findByUserId(userId);
-            System.out.println("Your Friends:");
+            System.out.println("\nYour Friends:");
             for (FriendList friend : friends) {
                 AppUser friendUser = appUserRepo.findById(friend.getFriendId()).orElse(null);
                 System.out.println((friendUser != null ? friendUser.getUsername() : "Unknown user"));
@@ -173,14 +173,14 @@ public class FriendCommand {
             if (choice == 0) {
                 return;
             } else {
-                System.out.println("Invalid choice. Please try again.");
+                System.out.println("\nInvalid choice. Please try again.");
             }
         }
     }
 
 
     public void removeFriend() {
-        System.out.print("Enter the username of the person you wish to remove: \n");
+        System.out.print("\nEnter the username of the person you wish to remove: \n");
         String friendUsername = scanner.nextLine();
 
         if (appUserRepo.findByUsername(friendUsername) == null) {

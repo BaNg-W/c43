@@ -18,7 +18,7 @@ public class LoginCommand {
         this.currentUser = currentUser;
     }
 
-    @ShellMethod(key = "login", value = "Login to a registered account.")
+    @ShellMethod(key = "login", value = "Login to a registered account.  >login <username> <password>")
     public String login(@ShellOption String username, @ShellOption String password) {
         AppUser user = appUserRepo.findByUsername(username);
         if (user != null) {
