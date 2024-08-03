@@ -19,7 +19,7 @@ public class StartupRunner implements CommandLineRunner {
             
             If you do not have an account, please use the register command to make one.
             
-            You can also use "help" to all available commands at any time.
+            You can also use "help" to see all available commands at any time.
             """);
     }
 }
